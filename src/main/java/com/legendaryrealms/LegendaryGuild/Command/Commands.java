@@ -59,12 +59,15 @@ public class Commands implements CommandExecutor, TabCompleter {
     public boolean onCommand(CommandSender sender, Command command, String s, String[] strings)
     {
         int length = strings.length;
+
+        // TODO 当输入/guild时执行操作
         if (length == 0){
             //发送指令提示
             lang.help_player.forEach(msg -> {
                 sender.sendMessage(msg);
             });
         }
+
         else {
             String subCommandName = strings[0];
             HashMap<String,LegendaryCommand> map=commands;

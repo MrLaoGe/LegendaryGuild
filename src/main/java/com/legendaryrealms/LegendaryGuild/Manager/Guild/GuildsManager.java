@@ -78,7 +78,7 @@ public class GuildsManager {
             return null;
         }
         String owner = user.getPlayer();
-        SimpleDateFormat df= new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat df= new SimpleDateFormat("yyyy-MM-dd");
         LinkedList<String> members = new LinkedList<>();
         members.add(owner);
         Guild guildData = new Guild(guild,owner,"",df.format(System.currentTimeMillis()),0.0,0.0,0.0,0,0,new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),new StringStore(),new ArrayList<>(), members,new LinkedList<>(),new Guild.GuildHomeLocation("null",LegendaryGuild.getInstance().SERVER,0.0,0.0,0.0));

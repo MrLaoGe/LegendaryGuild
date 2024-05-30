@@ -191,7 +191,7 @@ public class Guild {
 
 
     public void addApplication(String target){
-        SimpleDateFormat df= new SimpleDateFormat("yyyy-MM-dd/HH:mm:ss");
+        SimpleDateFormat df= new SimpleDateFormat("yyyy-MM-dd");
         String date = df.format(System.currentTimeMillis());
         applications.add(new Application(target,date));
     }

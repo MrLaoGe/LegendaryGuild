@@ -384,7 +384,7 @@ public class LegendaryGuild extends JavaPlugin implements PluginMessageListener 
         Bukkit.getScheduler().runTaskTimerAsynchronously(legendaryGuild,runnable,delay,timer);
     }
     public String getDate(){
-        SimpleDateFormat df= new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+        SimpleDateFormat df= new SimpleDateFormat("yyyy-MM-dd");
         String date = df.format(System.currentTimeMillis());
         return date;
     }
