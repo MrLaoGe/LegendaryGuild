@@ -39,7 +39,9 @@ public class Config extends FileProvider{
 
     public HashMap<Integer, List<String>> WISH;
     public double MIN_REDPACKET_TOTAL;
+    public double MAX_REDPACKET_TOTAL;
     public int MIN_REDPACKET_AMOUNT;
+    public int MAX_REDPACKET_AMOUNT;
     public int ACTIVITY_CYCLE;
 
     public int HOME_WAIT;
@@ -145,8 +147,9 @@ public class Config extends FileProvider{
         ACTIVITY_CYCLE = getValue("settings.guild.activity.cycle",7);
 
         MIN_REDPACKET_AMOUNT = getValue("settings.redpacket.min_amount",2);
+        MAX_REDPACKET_AMOUNT = getValue("settings.redpacket.max_amount",160);
         MIN_REDPACKET_TOTAL = getValue("settings.min_total",100.0);
-
+        MAX_REDPACKET_TOTAL = getValue("settings.max_total",1000000.0);
 
         //公会驻地设置
         HOME_WAIT = getValue("settings.guild.home.teleport_wait",5);

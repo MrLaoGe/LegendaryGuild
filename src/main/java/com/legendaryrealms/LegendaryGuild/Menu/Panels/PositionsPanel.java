@@ -52,8 +52,6 @@ public class PositionsPanel extends MenuDraw {
 
 
                         menuItem.setI(replaceHolderUtils.startReplace(i,false,null));
-
-
                     }
                 }
             }

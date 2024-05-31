@@ -16,15 +16,18 @@ public class RedPacketCommand extends LegendaryCommand {
 
     @Override
     public void handle(CommandSender sender, String[] args) {
+        // TODO 红包金币
         String totalStr = args[1];
+        // TODO 红包数量
         String amountStr = args[2];
-        if (sender instanceof Player){
 
+        if (sender instanceof Player){
             Player p = (Player) sender;
             if (!legendaryGuild.checkIsNumber(totalStr) || !legendaryGuild.checkIsNumber(amountStr)){
                 sender.sendMessage(lang.plugin+lang.notmember);
                 return;
             }
+
             double total = Double.parseDouble(totalStr);
             int amount = Integer.parseInt(amountStr);
             GuildAPI.createRedPacket(p,total,amount);

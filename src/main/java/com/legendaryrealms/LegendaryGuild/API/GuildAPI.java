@@ -103,29 +103,50 @@ public class GuildAPI {
     public static void createRedPacket(Player p,double total,int amount){
         if (legendaryguild.getHookManager().getVaultHook().isEnable()) {
             User user = legendaryguild.getUsersManager().getUser(p.getName());
+
             if (!user.hasGuild()) {
                 p.sendMessage(lang.plugin + lang.nothasguild);
                 return;
             }
+
             Guild guildData = legendaryguild.getGuildsManager().getGuild(user.getGuild());
+
             if (total < config.MIN_REDPACKET_TOTAL) {
                 p.sendMessage(lang.plugin + lang.redpacket_min_total);
                 return;
             }
+
+            // TODO 完善了红包的面额
+            if (total >= config.MAX_REDPACKET_TOTAL){
+                p.sendMessage(lang.plugin + lang.redpacket_min_total);
+                return;
+            }
+
             if (amount < config.MIN_REDPACKET_AMOUNT) {
                 p.sendMessage(lang.plugin + lang.redpacket_min_amount);
                 return;
             }
+
+            if (amount >= config.MAX_REDPACKET_AMOUNT) {
+                p.sendMessage(lang.plugin + lang.redpacket_min_amount);
+                return;
+            }
+
             if (amount > guildData.getMembers().size()){
                 p.sendMessage(lang.plugin+lang.redpacket_create_amount_max);
                 return;
             }
+
             if (legendaryguild.getHookManager().getVaultHook().getEconomy().getBalance(p) < total){
                 p.sendMessage(lang.plugin+lang.vault_noenough.replace("%value%",total+""));
                 return;
             }
 
+            // TODO 扣除掉金币
             legendaryguild.getHookManager().getVaultHook().getEconomy().withdrawPlayer(p,total);
+
+            // TODO 红包扣税
+            total = total*0.85;
 
             UUID uuid = UUID.randomUUID();
             Guild_Redpacket redpackets = legendaryguild.getDataBase().getRedPacket(guildData.getGuild());
