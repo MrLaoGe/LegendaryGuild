@@ -117,7 +117,7 @@ public class GuildAPI {
             }
 
             // TODO 完善了红包的面额
-            if (total >= config.MAX_REDPACKET_TOTAL){
+            if (total > config.MAX_REDPACKET_TOTAL){
                 p.sendMessage(lang.plugin + lang.redpacket_min_total);
                 return;
             }
@@ -127,7 +127,7 @@ public class GuildAPI {
                 return;
             }
 
-            if (amount >= config.MAX_REDPACKET_AMOUNT) {
+            if (amount > config.MAX_REDPACKET_AMOUNT) {
                 p.sendMessage(lang.plugin + lang.redpacket_min_amount);
                 return;
             }

@@ -32,17 +32,17 @@ public class ExpCommand extends LegendaryCommand {
         switch (aot.toLowerCase()){
             case "add" : {
                 GuildAPI.addGuildExp(sender.getName(),guild,amount);
-                sender.sendMessage(lang.plugin+lang.admin_exp_add.replace("%target%",guildName).replace("%value%",amountStr));
+                // sender.sendMessage(lang.plugin+lang.admin_exp_add.replace("%target%",guildName).replace("%value%",amountStr));
                 break;
             }
             case "take" : {
                 GuildAPI.takeGuildExp(guild,amount);
-                sender.sendMessage(lang.plugin+lang.admin_exp_take.replace("%target%",guildName).replace("%value%",amountStr));
+                // sender.sendMessage(lang.plugin+lang.admin_exp_take.replace("%target%",guildName).replace("%value%",amountStr));
                 break;
             }
             case "set" : {
                 GuildAPI.setGuildExp(guild,amount);
-                sender.sendMessage(lang.plugin+lang.admin_exp_set.replace("%target%",guildName).replace("%value%",amountStr));
+                // sender.sendMessage(lang.plugin+lang.admin_exp_set.replace("%target%",guildName).replace("%value%",amountStr));
                 break;
             }
         }
