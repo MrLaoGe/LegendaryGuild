@@ -33,6 +33,10 @@ public class RequirementsManager {
         register(new GuildPointsRequirement());
         register(new ChanceRequirement());
         register(new GuildPositionRequirement());
+        register(new PlaceholderRequirement());
+        register(new ActivityRequirement());
+        register(new TotalActivityRequirement());
+
     }
 
     public Optional<Requirement> serialize(String str){

@@ -1,6 +1,9 @@
 package com.legendaryrealms.LegendaryGuild.API;
 
 import com.legendaryrealms.LegendaryGuild.API.Events.*;
+import com.legendaryrealms.LegendaryGuild.Data.Guild.GuildActivityData;
+import com.legendaryrealms.LegendaryGuild.Data.Guild.GuildTeamShopData;
+import com.legendaryrealms.LegendaryGuild.Data.Others.TeamShopItem;
 import com.legendaryrealms.LegendaryGuild.Data.Others.WaterPot;
 import com.legendaryrealms.LegendaryGuild.Data.User.Position;
 import com.legendaryrealms.LegendaryGuild.Data.User.WaterDataStore;
@@ -104,7 +107,7 @@ public class UserAPI {
                     if (toPoints > 0) {
                         addPoints = amount * toPoints;
                         user.addPoints(addPoints, true);
-                        user.update();
+                        user.update(false);
                     }
                     legendaryGuild.getHookManager().getVaultHook().getEconomy().withdrawPlayer(p,amount);
 
@@ -128,7 +131,7 @@ public class UserAPI {
         if (user.hasGuild()){
             return;
         }
-        if (guild.getMembers().size() >= legendaryGuild.getFileManager().getConfig().MEMBERS.get(guild.getLevel())){
+        if (guild.getMembers().size() >= guild.getMaxMembers()){
             return;
         }
 
@@ -139,7 +142,7 @@ public class UserAPI {
         user.setTotal_points(0.0);
         user.setDate(legendaryGuild.getDate());
         //更新数据库并同步子服数据
-        user.update();
+        user.update(false);
 
         //添加成员
         guild.getMembers().add(user.getPlayer());
@@ -157,9 +160,10 @@ public class UserAPI {
         if (!user.hasGuild()){
             return false;
         }
-        if (user.getPosition().equals(legendaryGuild.getPositionsManager().getOwnerPosition().getId())){
+        Position position = legendaryGuild.getPositionsManager().getPosition(user.getPosition()).orElse(legendaryGuild.getPositionsManager().getDefaultPosition());
+        if (!position.isKick()){
             if (sender != null){
-                sender.sendMessage(lang.plugin+lang.isowner);
+                sender.sendMessage(lang.plugin+lang.nopass_position);
             }
             return false;
         }
@@ -173,7 +177,7 @@ public class UserAPI {
         user.setCooldown(legendaryGuild.getFileManager().getConfig().COOLDOWN * 60);
         user.setDate("");
         //更新数据库并通知其他子服务器
-        user.update();
+        user.update(false);
 
 
         //设置公会数据
@@ -181,6 +185,11 @@ public class UserAPI {
         guild.getMembers().remove(user.getPlayer());
         //更新数据库通知其他子服务器
         guild.update();
+
+        //删除玩家所有的活跃度
+        GuildActivityData activityData = legendaryGuild.getGuildActivityDataManager().getData(guildName);
+        activityData.clearPlayerData(user.getPlayer());
+        activityData.update();
 
         //发送消息
         if (sender != null){
@@ -244,7 +253,7 @@ public class UserAPI {
         }
         String oldPosition = TargetUser.getPosition();
         TargetUser.setPosition(positionId);
-        TargetUser.update();
+        TargetUser.update(false);
 
         seter.sendMessage(lang.plugin+lang.positions_message.replace("%target%",target).replace("%value%",position.getDisplay()));
         legendaryGuild.getMsgUtils().sendMessage(target,lang.plugin+lang.positions_message_target.replace("%value%",position.getDisplay()));
@@ -281,7 +290,7 @@ public class UserAPI {
         }
         if (!targetUser.getPosition().equals(defaultId)) {
             targetUser.setPosition(defaultId);
-            targetUser.update();
+            targetUser.update(false);
             Bukkit.getPluginManager().callEvent(new PlayerPositionChangeEvent(targetUser,old,defaultId));
         }
 
@@ -301,7 +310,7 @@ public class UserAPI {
                 }
                 user.setWish(true);
                 //更新数据库并通知其他子服务器
-                user.update();
+                user.update(false);
 
                 legendaryGuild.getMsgUtils().sendMessage(user.getPlayer(), lang.plugin + lang.tree_wish);
                 Guild guild = legendaryGuild.getGuildsManager().getGuild(user.getGuild());
@@ -339,7 +348,7 @@ public class UserAPI {
                     waterDataStore.addAmount(potId, WaterDataStore.WaterDataType.TODAY, 1);
                     waterDataStore.addAmount(potId, WaterDataStore.WaterDataType.TOTAL, 1);
                     user.setWaterDataStore(waterDataStore);
-                    user.update();
+                    user.update(false);
 
                     p.sendMessage(lang.plugin + lang.tree_water.replace("%value%", pot.getDisplay()));
                     Guild guild = legendaryGuild.getGuildsManager().getGuild(user.getGuild());
@@ -373,13 +382,19 @@ public class UserAPI {
         user.setPoints(0,false);
         user.setTotal_points(0);
         user.setCooldown(legendaryGuild.getFileManager().getConfig().COOLDOWN);
-        user.update();
+        user.update(false);
 
         Guild guild = legendaryGuild.getGuildsManager().getGuild(guildName);
         LinkedList<String> members = guild.getMembers();
         members.remove(members.indexOf(p.getName()));
         guild.setMembers(members);
         guild.update();
+
+
+        //删除玩家所有的活跃度
+        GuildActivityData activityData = legendaryGuild.getGuildActivityDataManager().getData(guildName);
+        activityData.clearPlayerData(user.getPlayer());
+        activityData.update();
 
         Bukkit.getPluginManager().callEvent(new PlayerQuitGuildEvent(p,guild));
 
@@ -408,9 +423,15 @@ public class UserAPI {
         guild.setOwner(target);
         guild.update();
         user.setPosition(legendaryGuild.getPositionsManager().getDefaultPosition().getId());
-        user.update();
+        user.update(false);
         tagetUser.setPosition(legendaryGuild.getPositionsManager().getOwnerPosition().getId());
-        tagetUser.update();
+        tagetUser.update(false);
+
+
+        //删除玩家所有的活跃度
+        GuildActivityData activityData = legendaryGuild.getGuildActivityDataManager().getData(guild.getGuild());
+        activityData.clearPlayerData(user.getPlayer());
+        activityData.update();
 
         owner.sendMessage(lang.plugin+lang.give_message.replace("%value%",guild.getDisplay()).replace("%target%",target));
         legendaryGuild.getMsgUtils().sendMessage(target,lang.plugin+lang.give_message_target.replace("%value%",guild.getDisplay()));
@@ -513,9 +534,76 @@ public class UserAPI {
 
             User user = getUser(p.getName());
             user.setTeleport_guild_home(true);
-            user.update();
+            user.update(false);
 
             legendaryGuild.getNetWork().teleportServer(p,location.getServer());
         }
+    }
+    public static void resetGuildTeamShopData(Guild guild,String player,int amount) {
+
+            GuildTeamShopData teamShopData = LegendaryGuild.getInstance().getGuildTeamShopDataManager().getGuildTeamShopData(guild.getGuild());
+            teamShopData.resetPlayerBuys(player,amount);
+            teamShopData.update(false);
+
+    }
+
+    public static boolean buyGuildTeamShop(Player p,User user,Guild guild, TeamShopItem shopItem, GuildTeamShopData teamShopData) {
+
+        if (shopItem.getLimit() > 0 && (shopItem.getLimit() <= teamShopData.getBuyAmount(p.getName()))) {
+            p.sendMessage(lang.plugin + lang.bargain_buy_limit.replace("%limit%",String.valueOf(shopItem.getLimit())));
+            return false;
+        }
+
+        boolean canBuy = false;
+        double price = teamShopData.getCurrentPrice();;
+        switch (shopItem.getCurrency()) {
+            case VAULT: {
+                if (LegendaryGuild.getInstance().getHookManager().getVaultHook().isEnable()) {
+                    if (LegendaryGuild.getInstance().getHookManager().getVaultHook().getEconomy().has(p,price)) {
+                        canBuy = true;
+                        LegendaryGuild.getInstance().getHookManager().getVaultHook().getEconomy().withdrawPlayer(p,price);
+                    }
+                    p.sendMessage(lang.plugin + lang.reuirement_notenough_vault.replace("%value%" , String.valueOf(price)));
+                    break;
+                }
+                LegendaryGuild.getInstance().info("检测到未安装 Vault .",Level.SEVERE);
+                break;
+            }
+            case PLAYERPOINTS: {
+                if (LegendaryGuild.getInstance().getHookManager().getPlayerPointsHook().isEnable()) {
+                    if (LegendaryGuild.getInstance().getHookManager().getPlayerPointsHook().getPlayerPoints().getAPI().look(p.getUniqueId()) >= price) {
+                        canBuy = true;
+                        LegendaryGuild.getInstance().getHookManager().getPlayerPointsHook().getPlayerPoints().getAPI().take(p.getUniqueId(), (int) price);
+                        break;
+                    }
+                    p.sendMessage(lang.plugin + lang.reuirement_notenough_playerpoints.replace("%value%" , String.valueOf(price)));
+                    break;
+                }
+                LegendaryGuild.getInstance().info("检测到未安装 PlayerPoints",Level.SEVERE);
+                break;
+            }
+            case GUILD_POINTS: {
+                if (user.getPoints() >= price) {
+                    canBuy = true;
+                    user.takePoints(price , false);
+                    user.update(false);
+                    break;
+                }
+                break;
+            }
+        }
+        if (canBuy) {
+            //增加购买次数
+            teamShopData.addBuyAmount(p.getName(),1);
+
+            String display = shopItem.getDisplay();
+            p.sendMessage(lang.plugin + lang.bargain_buy.replace("%display%",display)
+                    .replace("%price%",String.valueOf(price)));
+            legendaryGuild.getMsgUtils().sendGuildMessage(guild.getMembers(),lang.plugin + lang.bargain_buy_broad.replace("%player%",p.getName())
+                    .replace("%display%",display)
+                    .replace("%price%",String.valueOf(price)));
+            new RunUtils(shopItem.getRun(),p).start();
+        }
+        return canBuy;
     }
 }

@@ -10,6 +10,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
@@ -113,6 +114,8 @@ public abstract class MenuDraw implements InventoryHolder{
         return loader;
     }
 
+
+
     public abstract void onClick(InventoryClickEvent e);
 
     public void open(){
@@ -140,10 +143,26 @@ public abstract class MenuDraw implements InventoryHolder{
         }
         return rL;
     }
+
+
+    public <T> List<T> getPage(int page,int perpage, List<T> list){
+        int start = 0 + (page-1) * perpage;
+        int end = perpage + (page-1)*perpage;
+        List<T> rL = new ArrayList<>();
+        for (int get = start;get < end ; get ++){
+            if (list.size() > get) {
+                rL.add(list.get(get));
+            }
+        }
+        return rL;
+    }
     @Override
     public Inventory getInventory() {
         return inv;
     }
     public abstract void onDrag(InventoryDragEvent e);
+    public void onClose(InventoryCloseEvent e) {
+
+    }
 
 }

@@ -43,6 +43,7 @@ public class Commands implements CommandExecutor, TabCompleter {
         commands.put("delete",new DeleteCommand());
         commands.put("admin",new AdminCommand());
 
+        admin_commands.put("maxmembers",new MaxMembersCommand());
         admin_commands.put("points",new PointsCommand());
         admin_commands.put("reload",new ReloadCommand());
         admin_commands.put("money",new MoneyCommand());
@@ -53,6 +54,8 @@ public class Commands implements CommandExecutor, TabCompleter {
         admin_commands.put("buff",new BuffCommand());
         admin_commands.put("activity",new ActivityCommand());
         admin_commands.put("delete",new com.legendaryrealms.LegendaryGuild.Command.AdminCommands.DeleteCommand());
+        admin_commands.put("reset",new ResetCommand());
+        admin_commands.put("teamshop",new TeamShopCommand());
 
     }
     @Override
@@ -81,7 +84,7 @@ public class Commands implements CommandExecutor, TabCompleter {
                 return false;
             }
             if (sender.hasPermission(cmd.getPermission())) {
-                if (length == cmd.getLength()) {
+                if (cmd.getLength().contains(length)) {
                     cmd.handle(sender, strings);
                     return true;
                 }

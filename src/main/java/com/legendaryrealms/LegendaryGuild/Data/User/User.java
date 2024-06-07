@@ -28,7 +28,7 @@ public class User {
     private PvpType pvp;
     private boolean chat;
 
-    public User(String player, String guild, String position, String date, WaterDataStore waterDataStore, int cooldown, boolean wish, boolean teleport_guild_home, double points, double total_points,PvpType pvp) {
+    public User(String player, String guild, String position, String date, WaterDataStore waterDataStore, int cooldown, boolean wish, boolean teleport_guild_home, double points, double total_points,PvpType pvp ) {
         this.player = player;
         this.guild = guild;
         this.position = position;
@@ -52,6 +52,7 @@ public class User {
         this.chat = chat;
     }
 
+
     public boolean hasGuild(){
         if (guild == null || guild.isEmpty() || (guild != null && guild.equals(lang.default_guild))){
             return false;
@@ -66,7 +67,7 @@ public class User {
             setPosition(lang.default_position);
             setPoints(0,false);
             setTotal_points(0);
-            update();
+            update(false);
             return false;
         }
         return true;
@@ -175,8 +176,8 @@ public class User {
     }
 
 
-    public void update() {
-        LegendaryGuild.getInstance().getUsersManager().updateUser(this, true);
+    public void update(boolean r) {
+        LegendaryGuild.getInstance().getUsersManager().updateUser(this, r);
         if (LegendaryGuild.getInstance().getNetWork().isEnable()) {
             Player p = Iterables.getFirst(Bukkit.getOnlinePlayers(),null);
             if (p != null) {
