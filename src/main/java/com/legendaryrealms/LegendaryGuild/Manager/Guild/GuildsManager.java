@@ -81,7 +81,7 @@ public class GuildsManager {
         SimpleDateFormat df= new SimpleDateFormat("yyyy-MM-dd");
         LinkedList<String> members = new LinkedList<>();
         members.add(owner);
-        Guild guildData = new Guild(guild,owner,"",df.format(System.currentTimeMillis()),0.0,0.0,0.0,0,0,new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),new StringStore(),new ArrayList<>(), members,new LinkedList<>(),new Guild.GuildHomeLocation("null",LegendaryGuild.getInstance().SERVER,0.0,0.0,0.0));
+        Guild guildData = new Guild(guild,owner,"",df.format(System.currentTimeMillis()),0.0,0.0,0.0,0,0,new ArrayList<>(),new ArrayList<>(),new ArrayList<>(),new StringStore(),new ArrayList<>(), members,new LinkedList<>(),new Guild.GuildHomeLocation("null",LegendaryGuild.getInstance().SERVER,0.0,0.0,0.0),0);
         cache.put(guild,guildData);
         //更新公会数据库
         updateGuild(guildData,false);
@@ -91,7 +91,7 @@ public class GuildsManager {
         user.setPosition(legendaryGuild.getPositionsManager().getOwnerPosition().getId());
         user.setPoints(0.0,false);
         //更新数据库数据以及通知其他子服务器更新数据
-        user.update();
+        user.update(false);
 
         //通知其他子服务器更新公会数据
         //....

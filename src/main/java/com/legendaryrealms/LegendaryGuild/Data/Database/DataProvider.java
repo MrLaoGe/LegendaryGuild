@@ -1,18 +1,14 @@
 package com.legendaryrealms.LegendaryGuild.Data.Database;
 
-import com.legendaryrealms.LegendaryGuild.Data.Guild.Guild;
-import com.legendaryrealms.LegendaryGuild.Data.Guild.GuildActivityData;
-import com.legendaryrealms.LegendaryGuild.Data.Guild.GuildStore;
-import com.legendaryrealms.LegendaryGuild.Data.Guild.Guild_Redpacket;
+import com.legendaryrealms.LegendaryGuild.Data.Guild.*;
 import com.legendaryrealms.LegendaryGuild.Data.Guild.Shop.GuildShopData;
 import com.legendaryrealms.LegendaryGuild.Data.Others.StringStore;
 import com.legendaryrealms.LegendaryGuild.Data.User.User;
 import com.legendaryrealms.LegendaryGuild.LegendaryGuild;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Consumer;
 import java.util.logging.Level;
 
 public abstract class DataProvider {
@@ -44,11 +40,119 @@ public abstract class DataProvider {
     public abstract List<String> getGuildActivityDatas();
     public abstract void closeCon(Connection connection);
 
+    public abstract Optional<GuildTeamShopData> getGuildTeamShopData(String guild);
+    public abstract void setGuildTeamShopData(GuildTeamShopData data);
+
+    public abstract void clearGuildTeamShopData(String guildName);
+
+
+    public void checkTable(DatabaseTable table,Connection connection) {
+        try {
+            DatabaseMetaData metaData = connection.getMetaData();
+            Builder builder = table.getBuilder();
+            for (Builder.Column key : builder.keys) {
+                if (!metaData.getColumns(null,null,builder.getTableName(), key.getColumn()).next()) {
+                    Statement statement = connection.createStatement();
+                    statement.executeUpdate("ALTER TABLE " + builder.getTableName() + " ADD COLUMN " + key.getColumn()+" " + key.getType());
+                    LegendaryGuild.getInstance().info("检测到表 "+builder.getTableName() +" 缺失列 "+key.getColumn()+" 已自动补全..",Level.INFO);
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    public<T> HashMap<String,T> getMap(String str) {
+        HashMap<String,T> map = new HashMap<>();
+        if (str != null && !str.isEmpty()) {
+            for (String args : str.split(";")) {
+                String[] values = args.split("=");
+                map.put(values[0], (T) values[1]);
+            }
+        }
+        return map;
+    }
+    public<T> String getMapString(HashMap<String,T> map) {
+        StringBuilder builder = new StringBuilder();
+        if (map != null && !map.isEmpty()) {
+            for (Map.Entry<String,T> entry : map.entrySet()) {
+                builder.append(entry.getKey()).append("=").append(entry.getValue()).append(";");
+            }
+        }
+        return builder.toString();
+    }
+
+    protected Optional<ResultSet> getDataStringResult(Connection connection, DataProvider.Builder builder, String target) {
+        if (connection != null) {
+            PreparedStatement statement = null;
+            ResultSet resultSet = null;
+            try {
+                statement = connection.prepareStatement("SELECT * FROM " + builder.getTableName() + " WHERE `" + builder.getMainKey() + "` = '" + target + "' LIMIT 1;");
+                resultSet = statement.executeQuery();
+                while (resultSet.next()) {
+                    return Optional.of(resultSet);
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return Optional.empty();
+    }
+
+    protected Optional<ResultSet> getDataStrings(Connection connection, DataProvider.Builder builder) {
+        if (connection != null) {
+            PreparedStatement statement = null;
+            ResultSet rs = null;
+            try {
+                statement = connection.prepareStatement("SELECT * FROM "+builder.getTableName()+";");
+                rs = statement.executeQuery();
+                return Optional.of(rs);
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+        return Optional.empty();
+    }
+    protected void delData(Connection connection, DataProvider.Builder builder, String target) {
+        if (connection != null) {
+            PreparedStatement statement = null;
+            try {
+                statement = connection.prepareStatement("DELETE FROM `"+builder.getTableName()+"` WHERE `"+builder.getMainKey()+"` = ?");
+                statement.setString(1, target);
+                statement.executeUpdate();
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
+            }
+        }
+    }
+    protected <T> void setData(Connection connection, DataProvider.Builder builder, String target, T... ts) {
+        if (connection != null) {
+            PreparedStatement ps = null;
+            try {
+                ps = connection.prepareStatement(builder.getInsertString(target));
+                int a = 1;
+                for (T t : ts) {
+                    ps.setObject(a, t);
+                    a++;
+                }
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
+        }
+    }
     public enum DatabaseType {
         MYSQL,SQLite
     }
 
     public enum DatabaseTable{
+        GUILD_TEAMSHOP("guild_teamshop",new Builder("guild_teamshop")
+                .addVarcharKey("guild",32)
+                .addTextKey("id")
+                .addDoubleKey("current")
+                .addTextKey("bargains")
+                .addTextKey("buy")
+                .build("guild")),
         SYSTEM_PLACEHODER("system_placeholder",new Builder("system_placeholder")
                 .addVarcharKey("name",32)
                 .addTextKey("value")
@@ -74,6 +178,7 @@ public abstract class DataProvider {
                         .addDoubleKey("treeexp")
                         .addIntegerKey("level")
                         .addIntegerKey("treelevel")
+                        .addIntegerKey("extra_members")
                         .build("guild")
         ),
         USER_DATA("user_data",
@@ -110,7 +215,10 @@ public abstract class DataProvider {
         GUILD_ACTIVITY_DATA("guild_activity_data",new Builder("guild_activity_data")
                 .addVarcharKey("guild",32)
                 .addDoubleKey("points")
+                .addDoubleKey("total")
                 .addTextKey("claimed")
+                .addTextKey("current")
+                .addTextKey("history")
                 .build("guild"));
 
 
@@ -129,17 +237,16 @@ public abstract class DataProvider {
         }
     }
 
-    public static class Builder {
 
+    public static class Builder {
         private String tableName;
         private String mainKey;
         private StringBuilder stringBuilder;
-        private StringStore columns;
-
+        private List<Column> keys;
 
         public Builder(String tableName) {
+            this.keys = new ArrayList<>();
             this.tableName = tableName;
-            this.columns = new StringStore();
             stringBuilder = new StringBuilder("CREATE TABLE IF NOT EXISTS "+tableName+" (");
         }
 
@@ -148,7 +255,7 @@ public abstract class DataProvider {
                 stringBuilder.append(",");
             }
             stringBuilder.append("").append(keyName).append(" TEXT DEFAULT NULL");
-            columns.setValue(keyName,"TEXT DEFAULT NULL","TEXT DEFAULT NULL");
+            keys.add(new Column(keyName,"TEXT DEFAULT NULL"));
             return this;
         }
 
@@ -157,7 +264,7 @@ public abstract class DataProvider {
                 stringBuilder.append(",");
             }
             stringBuilder.append("").append(keyName).append(" UUID DEFAULT NULL");
-            columns.setValue(keyName,"UUID DEFAULT NULL","UUID DEFAULT NULL");
+            keys.add(new Column(keyName,"UUID DEFAULT NULL"));
             return this;
         }
 
@@ -166,7 +273,7 @@ public abstract class DataProvider {
                 stringBuilder.append(",");
             }
             stringBuilder.append("").append(keyName).append(" BLOB DEFAULT NULL");
-            columns.setValue(keyName,"BLOB DEFAULT NULL","BLOB DEFAULT NULL");
+            keys.add(new Column(keyName,"BLOB DEFAULT NULL"));
             return this;
         }
 
@@ -174,8 +281,8 @@ public abstract class DataProvider {
             if (!stringBuilder.toString().endsWith(",") && !stringBuilder.toString().endsWith("(")){
                 stringBuilder.append(",");
             }
-            stringBuilder.append("`").append(keyName).append("` INTEGER NOT NULL");
-            columns.setValue(keyName,"INTEGER DEFAULT NULL","INTEGER DEFAULT NULL");
+            stringBuilder.append("`").append(keyName).append("` INTEGER DEFAULT 0");
+            keys.add(new Column(keyName,"INTEGER DEFAULT 0"));
             return this;
         }
 
@@ -183,8 +290,8 @@ public abstract class DataProvider {
             if (!stringBuilder.toString().endsWith(",") && !stringBuilder.toString().endsWith("(")){
                 stringBuilder.append(",");
             }
-            stringBuilder.append("`").append(keyName).append("` DOUBLE NOT NULL");
-            columns.setValue(keyName,"DOUBLE DEFAULT NULL","DOUBLE DEFAULT NULL");
+            stringBuilder.append("`").append(keyName).append("` DOUBLE DEFAULT 0");
+            keys.add(new Column(keyName,"DOUBLE DEFAULT 0"));
             return this;
         }
         public Builder addLongKey(String keyName){
@@ -192,7 +299,7 @@ public abstract class DataProvider {
                 stringBuilder.append(",");
             }
             stringBuilder.append("`").append(keyName).append("` LONG NOT NULL");
-            columns.setValue(keyName,"LONG DEFAULT NULL","LONG DEFAULT NULL");
+            keys.add(new Column(keyName,"LONG NOT NULL"));
             return this;
         }
         public Builder addVarcharKey(String keyName,int length){
@@ -200,7 +307,7 @@ public abstract class DataProvider {
                 stringBuilder.append(",");
             }
             stringBuilder.append("`").append(keyName).append("` varchar("+length+") NOT NULL");
-            columns.setValue(keyName,"varchar("+length+") NOT NULL","varchar("+length+") NOT NULL");
+            keys.add(new Column(keyName,"varchar(" + length + ") NOT NULL"));
             return this;
         }
         public Builder addBooleanKey(String keyName){
@@ -208,7 +315,7 @@ public abstract class DataProvider {
                 stringBuilder.append(",");
             }
             stringBuilder.append("`").append(keyName).append("` BOOLEAN NOT NULL");
-            columns.setValue(keyName,"BOOLEAN DEFAULT NULL","BOOLEAN DEFAULT NULL");
+            keys.add(new Column(keyName,"BOOLEAN NOT NULL"));
             return this;
         }
         public Builder build(String mainKey){
@@ -233,9 +340,44 @@ public abstract class DataProvider {
             return stringBuilder.toString();
         }
 
-        public StringStore getColumns() {
-            return columns;
+        public String getInsertString(String target) { //`
+            StringBuilder main = new StringBuilder("REPLACE INTO "+tableName+" ");
+            StringBuilder keys = new StringBuilder("(");
+            StringBuilder keys_unknow = new StringBuilder("(");
+            for (int i =0 ; i < this.keys.size() ; i ++) {
+                keys.append("`").append(this.keys.get(i).getColumn()).append("`");
+                keys_unknow.append("?");
+                if (i == this.keys.size() - 1 ) {
+                    keys.append(")");
+                    keys_unknow.append(")");
+                    break;
+                } else {
+                    keys.append(",");
+                    keys_unknow.append(",");
+                }
+            }
+            main.append(keys).append(" VALUES ").append(keys_unknow);
+            return main.toString();
         }
 
+
+        public class Column {
+            private String column;
+            private String type;
+
+            public Column(String column, String type) {
+                this.column = column;
+                this.type = type;
+            }
+
+            public String getColumn() {
+                return column;
+            }
+
+            public String getType() {
+                return type;
+            }
+        }
     }
+
 }
