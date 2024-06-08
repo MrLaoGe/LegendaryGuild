@@ -150,8 +150,8 @@ public class Config extends FileProvider{
 
         MIN_REDPACKET_AMOUNT = getValue("settings.redpacket.min_amount",2);
         MAX_REDPACKET_AMOUNT = getValue("settings.redpacket.max_amount",160);
-        MIN_REDPACKET_TOTAL = getValue("settings.min_total",100.0);
-        MAX_REDPACKET_TOTAL = getValue("settings.max_total",1000000.0);
+        MIN_REDPACKET_TOTAL = getValue("settings.redpacket.min_total",100.0);
+        MAX_REDPACKET_TOTAL = getValue("settings.redpacket.max_total",1000000.0);
 
         //公会驻地设置
         HOME_WAIT = getValue("settings.guild.home.teleport_wait",5);
