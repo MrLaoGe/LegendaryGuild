@@ -23,6 +23,7 @@ public class Config extends FileProvider{
     public int max_length;
 
 
+    public boolean checkData;
     public HashMap<Integer, Double> EXP;
     public int MAXLEVEL;
     public HashMap<Integer, Double> TREEEXP;
@@ -63,6 +64,7 @@ public class Config extends FileProvider{
         WISH = new HashMap<>();
 
 
+        checkData = getValue("settings.DataCheck",true);
         try {
             store = DataProvider.DatabaseType.valueOf(getValue("Store","SQLite"));
         } catch (IllegalArgumentException e){
